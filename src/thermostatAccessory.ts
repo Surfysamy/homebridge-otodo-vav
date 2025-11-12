@@ -263,14 +263,14 @@ export class ThermostatAccessory {
   private mapHomeKitModeToApi(homeKitMode: number): string {
     // Exemple de mapping HomeKit → API
     switch (homeKitMode) {
-      case 0:
-        return 'auto';
-      case 1:
-        return 'heat';
-      case 2:
-        return 'cool';
-      default:
-        return 'heat';
+    case 0:
+      return 'auto';
+    case 1:
+      return 'heat';
+    case 2:
+      return 'cool';
+    default:
+      return 'heat';
     }
   }
 }
