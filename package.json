@@ -24,7 +24,8 @@
     "build": "tsc -p .",
     "watch": "tsc -w -p .",
     "clean": "rimraf dist",
-    "prepack": "npm run clean && npm run build"
+    "prepack": "npm run clean && npm run build",
+    "lint": "eslint ."
   },
   "devDependencies": {
     "@types/node": "^20.11.5",
