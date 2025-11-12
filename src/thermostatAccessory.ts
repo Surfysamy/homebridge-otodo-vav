@@ -228,21 +228,19 @@ export class ThermostatAccessory {
     }
   }
 
-  // ===== HELPERS DE MAPPING (à adapter selon l'API Otodo) =====
-
   private mapApiStateToHomeKit(apiState: string): number {
     // Exemple de mapping API → HomeKit CurrentHeaterCoolerState
     // 0: INACTIVE, 1: IDLE, 2: HEATING, 3: COOLING
     switch (apiState.toLowerCase()) {
-    case 'off':
+      case 'off':
         return 0; // INACTIVE
-    case 'idle':
+      case 'idle':
         return 1; // IDLE
-    case 'heating':
+      case 'heating':
         return 2; // HEATING
-    case 'cooling':
+      case 'cooling':
         return 3; // COOLING
-    default:
+      default:
         return 0;
     }
   }
@@ -251,13 +249,13 @@ export class ThermostatAccessory {
     // Exemple de mapping API → HomeKit TargetHeaterCoolerState
     // 0: AUTO, 1: HEAT, 2: COOL
     switch (apiMode.toLowerCase()) {
-    case 'auto':
+      case 'auto':
         return 0;
-    case 'heat':
+      case 'heat':
         return 1;
-    case 'cool':
+      case 'cool':
         return 2;
-    default:
+      default:
         return 1;
     }
   }
@@ -265,13 +263,13 @@ export class ThermostatAccessory {
   private mapHomeKitModeToApi(homeKitMode: number): string {
     // Exemple de mapping HomeKit → API
     switch (homeKitMode) {
-    case 0:
+      case 0:
         return 'auto';
-        case 1:
-    return 'heat';
-    case 2:
+      case 1:
+        return 'heat';
+      case 2:
         return 'cool';
-    default:
+      default:
         return 'heat';
     }
   }
