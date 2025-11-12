@@ -1,18 +1,49 @@
 {
-  "pluginAlias": "ExampleHomebridgePlugin",
+  "pluginAlias": "OtodoVavPlatform",
   "pluginType": "platform",
   "singular": true,
-  "strictValidation": false,
   "schema": {
     "type": "object",
-    "required": ["name"],
-    "additionalProperties": false,
     "properties": {
       "name": {
-        "title": "Name",
+        "title": "Platform Name",
         "type": "string",
-        "default": "Example Dynamic Platform"
+        "default": "OtodoVavPlatform"
+      },
+      "email": {
+        "title": "Email (VAV)",
+        "type": "string",
+        "format": "email",
+        "required": true
+      },
+      "password": {
+        "title": "Password (VAV)",
+        "type": "string",
+        "format": "password"
+      },
+      "parkname": {
+        "title": "Park name",
+        "type": "string",
+        "default": "vav"
+      },
+      "homeId": {
+        "title": "Home ID (optional)",
+        "type": "string"
+      },
+      "pollIntervalSec": {
+        "title": "Polling interval (seconds)",
+        "type": "number",
+        "default": 30
+      },
+      "debug": {
+        "title": "Verbose logging",
+        "type": "boolean",
+        "default": false
       }
-    }
+    },
+    "required": [
+      "email",
+      "password"
+    ]
   }
 }
