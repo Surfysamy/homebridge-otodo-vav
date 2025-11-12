@@ -29,6 +29,7 @@
   },
   "devDependencies": {
     "@types/node": "^20.11.5",
+    "eslint": "^9.39.1",
     "homebridge": "^1.11.1",
     "rimraf": "^5.0.5",
     "typescript": "^5.4.0"
