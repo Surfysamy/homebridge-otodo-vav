@@ -232,16 +232,16 @@ export class ThermostatAccessory {
     // Exemple de mapping API → HomeKit CurrentHeaterCoolerState
     // 0: INACTIVE, 1: IDLE, 2: HEATING, 3: COOLING
     switch (apiState.toLowerCase()) {
-      case 'off':
-        return 0; // INACTIVE
-      case 'idle':
-        return 1; // IDLE
-      case 'heating':
-        return 2; // HEATING
-      case 'cooling':
-        return 3; // COOLING
-      default:
-        return 0;
+    case 'off':
+      return 0; // INACTIVE
+    case 'idle':
+      return 1; // IDLE
+    case 'heating':
+      return 2; // HEATING
+    case 'cooling':
+      return 3; // COOLING
+    default:
+      return 0;
     }
   }
 
@@ -249,14 +249,14 @@ export class ThermostatAccessory {
     // Exemple de mapping API → HomeKit TargetHeaterCoolerState
     // 0: AUTO, 1: HEAT, 2: COOL
     switch (apiMode.toLowerCase()) {
-      case 'auto':
-        return 0;
-      case 'heat':
-        return 1;
-      case 'cool':
-        return 2;
-      default:
-        return 1;
+    case 'auto':
+      return 0;
+    case 'heat':
+      return 1;
+    case 'cool':
+      return 2;
+    default:
+      return 1;
     }
   }
 
