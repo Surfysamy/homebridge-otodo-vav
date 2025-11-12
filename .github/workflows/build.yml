@@ -34,4 +34,4 @@ jobs:
           npm audit || true  # ignore failures
           npm audit fix || true
           npm list --outdated
-          npm run build -- --fix
+          npm run build
