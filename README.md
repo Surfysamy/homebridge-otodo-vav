@@ -9,7 +9,7 @@
 ---
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/Surfysamy/homebridge-otodo-vav/latest/.github/images/homekit-thermostat-example.png" width="320" />
+  <img width="747" height="290" alt="hb x vav" src="https://github.com/user-attachments/assets/d4b259cc-923a-435f-8103-6b44b816eca0" />
 </p>
 
 ## 📝 Description
