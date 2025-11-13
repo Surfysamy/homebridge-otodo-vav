@@ -222,15 +222,15 @@ export class AuthClient {
   /**
    * Accesseurs pour les métadonnées stockées
    */
-  get homeId(): string | undefined {
-    return this.tokens?.homeId;
+  get homeId(): string | null {
+    return this.tokens?.homeId ?? null;
   }
 
-  get userId(): string | undefined {
-    return this.tokens?.userId;
+  get userId(): string | null {
+    return this.tokens?.userId ?? null;
   }
 
-  get parkId(): string | undefined {
-    return this.tokens?.parkId;
+  get parkId(): string | null {
+    return this.tokens?.parkId ?? null;
   }
 }
