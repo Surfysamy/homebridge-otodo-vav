@@ -39,11 +39,13 @@
         "title": "Verbose logging",
         "type": "boolean",
         "default": false
+      },
+      "displayModeSliders": {
+        "title": "Display Mode Sliders",
+        "type": "boolean",
+        "default": false
       }
     },
-    "required": [
-      "email",
-      "password"
-    ]
+    "required": ["email", "password"]
   }
 }

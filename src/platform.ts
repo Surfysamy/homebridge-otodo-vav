@@ -24,6 +24,9 @@ export class OtodoVavPlatform implements DynamicPlatformPlugin {
   private roomsById: Map<string, Room> = new Map();
   private hubsById: Map<string, Hub> = new Map();
 
+  // 🔥 AJOUT — nouvelle option config
+  private readonly displayModeSliders!: boolean;
+
   constructor(
     public readonly log: Logger,
     public readonly config: PlatformConfig,
@@ -34,11 +37,15 @@ export class OtodoVavPlatform implements DynamicPlatformPlugin {
       return;
     }
 
+    // 🔥 AJOUT — récupération de l'option, default false
+    this.displayModeSliders = this.config.displayModeSliders ?? false;
+
     if (config.debug === true) {
       this.log.debug('🔍 Mode debug activé');
     }
 
     this.log.info('🚀 Initialisation du plugin Otodo VAV');
+    this.log.info(`   Mode sliders: ${this.displayModeSliders ? 'ON' : 'OFF'}`);
 
     this.api.on('didFinishLaunching', async () => {
       try {
@@ -79,14 +86,12 @@ export class OtodoVavPlatform implements DynamicPlatformPlugin {
 
     await this.loadRooms();
     await this.loadHubs();
+
     this.hubsById.forEach(async hub => {
       await this.discoverDevices(hub._id);
     });
   }
 
-  /**
-   * Chargement optionnel des pièces pour des noms plus jolis
-   */
   private async loadRooms(): Promise<void> {
     try {
       this.log.debug('📂 Récupération des rooms...');
@@ -100,34 +105,22 @@ export class OtodoVavPlatform implements DynamicPlatformPlugin {
     }
   }
 
-  /**
-   * Chargement des hubs
-   */
   private async loadHubs(): Promise<void> {
     try {
-      this.log.debug('📂 Récupération des rooms...');
+      this.log.debug('📂 Récupération des hubs...');
       const hubs = await this.tClient.getHubs();
       this.hubsById = new Map(hubs.map(r => [r._id, r]));
-      this.log.debug(`📂 ${hubs.length} hubs chargées`);
+      this.log.debug(`📂 ${hubs.length} hubs chargés`);
     } catch (e) {
       this.log.warn('⚠️ Impossible de récupérer les hubs : ' + String(e));
     }
   }
 
-  /**
-   * Restaurer depuis le cache
-   */
   configureAccessory(accessory: PlatformAccessory): void {
-    this.log.debug(
-      "🔄 Restauration de l'accessoire depuis le cache:",
-      accessory.displayName,
-    );
+    this.log.debug("🔄 Restauration de l'accessoire:", accessory.displayName);
     this.accessories.push(accessory);
   }
 
-  /**
-   * Upsert d'un thermostat : création ou restauration
-   */
   private upsertThermostat(t: ThermostatService): void {
     const uuidThermo = this.api.hap.uuid.generate(`thermo:${t.hubId}:${t._id}`);
     const uuidSlider = this.api.hap.uuid.generate(`slider:${t.hubId}:${t._id}`);
@@ -138,7 +131,7 @@ export class OtodoVavPlatform implements DynamicPlatformPlugin {
       : `Thermostat ${t._id}`;
     const sliderName = roomName ? `Mode ${roomName}` : `Mode ${t._id}`;
 
-    // Accessoire Thermostat
+    // ========== THERMOSTAT ACCESSORY ==========
     const existingThermo = this.accessories.find(a => a.UUID === uuidThermo);
     if (existingThermo) {
       new ThermostatAccessory(this, existingThermo, t, this.tClient);
@@ -149,21 +142,33 @@ export class OtodoVavPlatform implements DynamicPlatformPlugin {
       this.accessories.push(acc);
     }
 
-    // Accessoire Mode Slider
+    // ========== MODE SLIDER ACCESSORY ==========
     const existingSlider = this.accessories.find(a => a.UUID === uuidSlider);
-    if (existingSlider) {
-      new OtodoModeSliderAccessory(this, existingSlider, t, this.tClient);
+
+    if (this.displayModeSliders) {
+      // Création / restauration
+      if (existingSlider) {
+        this.log.info(`♻️ Restauration du mode slider: ${sliderName}`);
+        new OtodoModeSliderAccessory(this, existingSlider, t, this.tClient);
+      } else {
+        this.log.info(`➕ Ajout du mode slider: ${sliderName}`);
+        const acc = new this.api.platformAccessory(sliderName, uuidSlider);
+        new OtodoModeSliderAccessory(this, acc, t, this.tClient);
+        this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [acc]);
+        this.accessories.push(acc);
+      }
     } else {
-      const acc = new this.api.platformAccessory(sliderName, uuidSlider);
-      new OtodoModeSliderAccessory(this, acc, t, this.tClient);
-      this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [acc]);
-      this.accessories.push(acc);
+      // 🔥 SUPPRESSION AUTOMATIQUE SI désactivé
+      if (existingSlider) {
+        this.log.info(`🗑️ Suppression du mode slider désactivé: ${sliderName}`);
+        this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [
+          existingSlider,
+        ]);
+        this.accessories.splice(this.accessories.indexOf(existingSlider), 1);
+      }
     }
   }
 
-  /**
-   * Découverte des thermostats via /local-services
-   */
   private async discoverDevices(hubId: string): Promise<void> {
     this.log.info('🔍 Recherche des thermostats Otodo VAV...');
     try {
