@@ -8,6 +8,14 @@
     "vav",
     "thermostat"
   ],
+  "homepage": "https://github.com/Surfysamy/homebridge-otodo-vav",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Surfysamy/homebridge-otodo-vav.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Surfysamy/homebridge-otodo-vav/issues"
+  },
   "license": "MIT",
   "author": "Surfysamy",
   "engines": {

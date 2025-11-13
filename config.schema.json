@@ -13,8 +13,7 @@
       "email": {
         "title": "Email (VAV)",
         "type": "string",
-        "format": "email",
-        "required": true
+        "format": "email"
       },
       "password": {
         "title": "Password (VAV)",
