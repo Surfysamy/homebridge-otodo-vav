@@ -30,6 +30,35 @@ You will be able to view and control the thermostat from the Apple Home app and 
 
 ---
 
+## 🔧✨ Optional Feature: Mode Sliders
+
+The plugin can optionally create a Mode Slider accessory for each thermostat.
+This slider allows you to change the Otodo/VAV mode by selecting one of six predefined positions.
+
+### Available modes
+| Slider Position | WorkingMode | Mode Name (Otodo) | Description             |
+| --------------- | ----------- | ----------------- | ----------------------- |
+| 0%              | 0           | Auto              | Follows weekly schedule |
+| 20%             | 1           | Confort           | Comfort temperature     |
+| 40%             | 2           | -1°C              | Comfort –1°C            |
+| 60%             | 3           | -2°C              | Comfort –2°C            |
+| 80%             | 4           | Eco               | Energy saving mode      |
+| 100%            | 5           | Antigel           | Frost protection        |
+
+The slider automatically snaps to the closest valid value.
+
+### Enable or disable Mode Sliders
+You can control whether these mode sliders appear in HomeKit using the following configuration option:
+```json
+"displayModeSliders": true
+```
+
+- `"displayModeSliders": true` → Each thermostat gets a “Mode” slider accessory
+- `"displayModeSliders": false` → Mode sliders are removed and hidden
+
+Thermostat accessories continue to work normally either way.
+
+
 ## 📦 Installation
 
 Install globally using npm on your Homebridge server:
