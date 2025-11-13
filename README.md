@@ -1,3 +1,7 @@
+<p align="center">
+  <img width="747" height="290" alt="hb x vav" src="https://github.com/user-attachments/assets/d4b259cc-923a-435f-8103-6b44b816eca0" />
+</p>
+
 # homebridge-otodo-vav
 
 [![npm version](https://img.shields.io/npm/v/homebridge-otodo-vav.svg)](https://www.npmjs.com/package/homebridge-otodo-vav)
@@ -7,10 +11,6 @@
 > A Homebridge plugin to integrate OTO Do VAV thermostats into HomeKit
 
 ---
-
-<p align="center">
-  <img width="747" height="290" alt="hb x vav" src="https://github.com/user-attachments/assets/d4b259cc-923a-435f-8103-6b44b816eca0" />
-</p>
 
 ## 📝 Description
 This plugin allows you to connect your **OTO Do VAV thermostat** to HomeKit via Homebridge.  
