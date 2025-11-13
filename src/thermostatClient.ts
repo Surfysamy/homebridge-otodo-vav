@@ -46,6 +46,21 @@ export class ThermostatClient {
     return res.json() as Promise<RoomsResponse>;
   }
 
+  async getLocalServices(hubId: string): Promise<ThermostatService[]> {
+    const res = await this.auth.authedFetch(
+      `${BASE_URL}/hubs/${hubId}/local-services`,
+    );
+
+    if (!res.ok) {
+      throw new Error(
+        `Erreur API local-services sur hub ${hubId}: ${res.status}`,
+      );
+    }
+
+    const json = (await res.json()) as LocalServicesResponse;
+    return json.filter(s => s.type === 'thermostat');
+  }
+
   /**
    * Récupère tous les local-services (thermostats) de tous les hubs
    */
@@ -71,17 +86,13 @@ export class ThermostatClient {
     hubId: string,
     serviceId: number,
   ): Promise<ThermostatService> {
-    const res = await this.auth.authedFetch(
-      `${BASE_URL}/hubs/${hubId}/local-services/${serviceId}`,
-    );
+    const list = await this.getLocalServices(hubId);
+    const thermostat = list.find(s => s._id === serviceId);
 
-    if (!res.ok) {
-      throw new Error(
-        `Erreur lors de la récupération du thermostat ${serviceId}: ${res.status}`,
-      );
+    if (!thermostat) {
+      throw new Error(`Thermostat ${serviceId} introuvable dans hub ${hubId}`);
     }
-
-    return res.json() as Promise<ThermostatService>;
+    return thermostat;
   }
 
   /**
