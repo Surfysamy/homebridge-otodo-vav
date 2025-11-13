@@ -82,12 +82,13 @@ export interface ThermostatService {
  * (d’après tes captures / reverse)
  */
 export enum WorkingMode {
-  OFF = 0,
-  CONFORT = 1,
-  ECO = 2,
-  HORS_GEL = 3,
-  // ... (4-5 éventuels)
-  MANUEL_OFF = 6,
+  AUTO = 0, // suit le planning (weeklyEvents)
+  CONFORT = 1, // consigne confort
+  MINUS_1 = 2, // -1°C par rapport à la consigne
+  MINUS_2 = 3, // -2°C
+  ECO = 4, // mode éco
+  ANTIFREEZE = 5, // antigel
+  MANUAL_OFF = 6, // arrêt manuel (non exposé dans l’accessoire mode)
 }
 
 /**

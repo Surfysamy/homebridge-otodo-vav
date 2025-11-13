@@ -171,7 +171,7 @@ export class ThermostatClient {
 
     thermostat.workingMode = active
       ? WorkingMode.CONFORT
-      : WorkingMode.MANUEL_OFF;
+      : WorkingMode.MANUAL_OFF;
 
     await this.updateThermostat(hubId, serviceId, thermostat);
   }
@@ -185,9 +185,6 @@ export class ThermostatClient {
   }
 
   isActive(thermostat: ThermostatService): boolean {
-    return (
-      thermostat.workingMode !== WorkingMode.OFF &&
-      thermostat.workingMode !== WorkingMode.MANUEL_OFF
-    );
+    return thermostat.workingMode !== WorkingMode.MANUAL_OFF;
   }
 }

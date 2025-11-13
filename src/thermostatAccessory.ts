@@ -302,10 +302,9 @@ export class ThermostatAccessory {
     switch (workingMode) {
       case WorkingMode.CONFORT:
       case WorkingMode.ECO:
-      case WorkingMode.HORS_GEL:
+      case WorkingMode.ANTIFREEZE:
         return TargetHeaterCoolerState.HEAT;
-      case WorkingMode.OFF:
-      case WorkingMode.MANUEL_OFF:
+      case WorkingMode.MANUAL_OFF:
       default:
         return TargetHeaterCoolerState.HEAT; // mais Active = 0
     }

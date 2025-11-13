@@ -12,6 +12,7 @@ import { OtodoClient } from './otodoClient';
 import { ThermostatClient } from './thermostatClient';
 import type { ThermostatService, Room, Hub } from './types';
 import { ThermostatAccessory } from './thermostatAccessory';
+import { OtodoModeSliderAccessory } from './otodoModeSliderAccessory';
 
 export class OtodoVavPlatform implements DynamicPlatformPlugin {
   public readonly accessories: PlatformAccessory[] = [];
@@ -128,26 +129,35 @@ export class OtodoVavPlatform implements DynamicPlatformPlugin {
    * Upsert d'un thermostat : création ou restauration
    */
   private upsertThermostat(t: ThermostatService): void {
-    const uuid = this.api.hap.uuid.generate(`hub:${t.hubId}:svc:${t._id}`);
-    const existing = this.accessories.find(acc => acc.UUID === uuid);
+    const uuidThermo = this.api.hap.uuid.generate(`thermo:${t.hubId}:${t._id}`);
+    const uuidSlider = this.api.hap.uuid.generate(`slider:${t.hubId}:${t._id}`);
 
     const roomName = this.roomsById.get(t.roomId)?.name;
-    const displayName = roomName
+    const thermoName = roomName
       ? `Thermostat ${roomName}`
       : `Thermostat ${t._id}`;
+    const sliderName = roomName ? `Mode ${roomName}` : `Mode ${t._id}`;
 
-    if (existing) {
-      this.log.info('♻️ Restauration du thermostat:', displayName);
-      new ThermostatAccessory(this, existing, t, this.tClient);
+    // Accessoire Thermostat
+    const existingThermo = this.accessories.find(a => a.UUID === uuidThermo);
+    if (existingThermo) {
+      new ThermostatAccessory(this, existingThermo, t, this.tClient);
     } else {
-      this.log.info('➕ Enregistrement du nouveau thermostat:', displayName);
-      const accessory = new this.api.platformAccessory(displayName, uuid);
-      new ThermostatAccessory(this, accessory, t, this.tClient);
+      const acc = new this.api.platformAccessory(thermoName, uuidThermo);
+      new ThermostatAccessory(this, acc, t, this.tClient);
+      this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [acc]);
+      this.accessories.push(acc);
+    }
 
-      this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [
-        accessory,
-      ]);
-      this.accessories.push(accessory);
+    // Accessoire Mode Slider
+    const existingSlider = this.accessories.find(a => a.UUID === uuidSlider);
+    if (existingSlider) {
+      new OtodoModeSliderAccessory(this, existingSlider, t, this.tClient);
+    } else {
+      const acc = new this.api.platformAccessory(sliderName, uuidSlider);
+      new OtodoModeSliderAccessory(this, acc, t, this.tClient);
+      this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [acc]);
+      this.accessories.push(acc);
     }
   }
 
