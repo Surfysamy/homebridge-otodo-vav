@@ -1,7 +1,6 @@
 import { promises as fs } from 'fs';
 import * as path from 'path';
 
-
 export interface StoredTokens {
   access_token: string;
   refresh_token: string;
@@ -11,7 +10,6 @@ export interface StoredTokens {
   homeId?: string;
   parkId?: string;
 }
-
 
 export class TokenStore {
   private filePath: string;

@@ -1,5 +1,5 @@
 import type { Logger } from 'homebridge';
-import { AUTH_URL } from './settings';
+import { AUTH_URL, API_HEADERS } from './settings';
 import { TokenStore, StoredTokens } from './tokenStore';
 
 export interface AuthConfig {
@@ -57,27 +57,40 @@ export class AuthClient {
 
   private async authenticate(): Promise<void> {
     this.log.debug('Authentification avec email:', this.cfg.email);
-    
+
     const body = {
       email: this.cfg.email,
       password: this.cfg.password,
-      parkname: this.cfg.parkname,
+      parkName: this.cfg.parkname, // Correction: parkName avec N majuscule
     };
+
+    // DEBUG: Afficher le body envoyé (masquer le password en prod)
+    this.log.debug(
+      'Body envoyé:',
+      JSON.stringify({
+        ...body,
+        password: '***',
+      }),
+    );
 
     try {
       const res = await fetch(AUTH_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: API_HEADERS,
         body: JSON.stringify(body),
       });
 
+      this.log.debug('Status de la réponse:', res.status);
+
       if (!res.ok) {
         const text = await res.text();
-        throw new Error(`Authentification échouée: HTTP ${res.status} - ${text}`);
+        throw new Error(
+          `Authentification échouée: HTTP ${res.status} - ${text}`,
+        );
       }
 
       const json = (await res.json()) as AuthResponse;
-      
+
       if (json.isSuspended) {
         throw new Error('Compte suspendu, impossible de continuer');
       }
@@ -99,7 +112,7 @@ export class AuthClient {
         new Date(this.tokens.expires_at_epoch_ms).toLocaleString(),
       );
     } catch (error) {
-      this.log.error('Erreur lors de l\'authentification:', error);
+      this.log.error("Erreur lors de l'authentification:", error);
       throw error;
     }
   }
@@ -118,15 +131,18 @@ export class AuthClient {
     this.refreshing = (async () => {
       try {
         this.log.debug('Rafraîchissement du token...');
-        
+
         // IMPORTANT: Vérifier si Otodo a un endpoint /refresh dédié
         // Pour l'instant, on ré-authentifie (safe mais non optimal)
         // TODO: Si l'API supporte POST /refresh avec { refresh_token: "..." }
         // implémenter ici au lieu de re-authenticate()
-        
+
         await this.authenticate();
       } catch (error) {
-        this.log.error('Échec du rafraîchissement, nouvelle authentification:', error);
+        this.log.error(
+          'Échec du rafraîchissement, nouvelle authentification:',
+          error,
+        );
         throw error;
       } finally {
         this.refreshing = null;
@@ -142,7 +158,7 @@ export class AuthClient {
     }
 
     const isValid = this.tokens.expires_at_epoch_ms > Date.now();
-    
+
     if (!isValid) {
       this.log.debug('Token expiré ou bientôt expiré');
     }
@@ -156,7 +172,7 @@ export class AuthClient {
     }
 
     if (!this.tokens) {
-      throw new Error('Impossible d\'obtenir un token valide');
+      throw new Error("Impossible d'obtenir un token valide");
     }
 
     return `${this.tokens.token_type} ${this.tokens.access_token}`;
@@ -171,22 +187,31 @@ export class AuthClient {
     retryOn401 = true,
   ): Promise<Response> {
     const auth = await this.getAuthHeader();
-    const headers = new Headers(init.headers);
-    
-    headers.set('Authorization', auth);
-    headers.set('Accept', 'application/json');
-    
-    if (init.body && !headers.has('Content-Type')) {
-      headers.set('Content-Type', 'application/json');
+
+    // Fusion des headers de l'API avec l'Authorization
+    const headers: Record<string, string> = {
+      ...API_HEADERS,
+      Authorization: auth,
+      token: auth.split(' ')[1], // Mettre le token dans le header 'token' aussi
+    };
+
+    // Copier les headers existants (override possible)
+    if (init.headers) {
+      const existingHeaders = new Headers(init.headers);
+      existingHeaders.forEach((value, key) => {
+        headers[key] = value;
+      });
     }
 
     this.log.debug(`${init.method || 'GET'} ${input}`);
-    
+
     const res = await fetch(input, { ...init, headers });
 
     // Si 401 et première tentative, refresh et retry
     if (res.status === 401 && retryOn401) {
-      this.log.warn('401 reçu, rafraîchissement du token et nouvelle tentative...');
+      this.log.warn(
+        '401 reçu, rafraîchissement du token et nouvelle tentative...',
+      );
       await this.refresh();
       return this.authedFetch(input, init, false);
     }
