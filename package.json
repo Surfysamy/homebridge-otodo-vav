@@ -1,6 +1,6 @@
 {
   "name": "homebridge-otodo-vav",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Homebridge plugin for Otodo VAV thermostats (auth + refresh ready)",
   "keywords": [
     "homebridge-plugin",
@@ -11,7 +11,7 @@
   "license": "MIT",
   "author": "Surfysamy",
   "engines": {
-    "node": ">=18.0.0",
+    "node": ">=20.0.0",
     "homebridge": ">=1.6.0"
   },
   "main": "dist/index.js",
