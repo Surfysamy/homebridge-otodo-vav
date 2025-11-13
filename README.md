@@ -6,7 +6,7 @@
 
 [![npm version](https://img.shields.io/npm/v/homebridge-otodo-vav.svg)](https://www.npmjs.com/package/homebridge-otodo-vav)
 [![npm downloads](https://img.shields.io/npm/dt/homebridge-otodo-vav.svg)](https://www.npmjs.com/package/homebridge-otodo-vav)
-![License](https://img.shields.io/github/license/Surfysamy/homebridge-otodo-vav.svg)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)
 
 > A Homebridge plugin to integrate OTO Do VAV thermostats into HomeKit
 
