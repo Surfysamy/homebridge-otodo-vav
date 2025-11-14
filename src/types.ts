@@ -110,3 +110,17 @@ export interface Room {
 }
 
 export type RoomsResponse = Room[];
+
+export interface DeviceCapability {
+  _id: number;
+  value: number;
+}
+
+export interface DeviceEndpoint {
+  capabilities?: DeviceCapability[];
+}
+
+export interface Device {
+  _id: number;
+  endpoints?: DeviceEndpoint[];
+}

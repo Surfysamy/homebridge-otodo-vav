@@ -10,9 +10,10 @@ import { TokenStore } from './tokenStore';
 import { AuthClient } from './auth';
 import { OtodoClient } from './otodoClient';
 import { ThermostatClient } from './thermostatClient';
-import type { ThermostatService, Room, Hub } from './types';
+import type { ThermostatService, Room, Hub, DeviceCapability } from './types';
 import { ThermostatAccessory } from './thermostatAccessory';
 import { OtodoModeSliderAccessory } from './otodoModeSliderAccessory';
+import { OtodoTempSensorAccessory } from './otodoTempAccessory';
 
 export class OtodoVavPlatform implements DynamicPlatformPlugin {
   public readonly accessories: PlatformAccessory[] = [];
@@ -20,11 +21,11 @@ export class OtodoVavPlatform implements DynamicPlatformPlugin {
   private auth!: AuthClient;
   private client!: OtodoClient;
   private tClient!: ThermostatClient;
+  private tempSensors: Map<number, OtodoTempSensorAccessory> = new Map();
 
   private roomsById: Map<string, Room> = new Map();
   private hubsById: Map<string, Hub> = new Map();
 
-  // 🔥 AJOUT — nouvelle option config
   private readonly displayModeSliders!: boolean;
 
   constructor(
@@ -90,6 +91,8 @@ export class OtodoVavPlatform implements DynamicPlatformPlugin {
     this.hubsById.forEach(async hub => {
       await this.discoverDevices(hub._id);
     });
+
+    await this.startDevicesPolling();
   }
 
   private async loadRooms(): Promise<void> {
@@ -124,6 +127,7 @@ export class OtodoVavPlatform implements DynamicPlatformPlugin {
   private upsertThermostat(t: ThermostatService): void {
     const uuidThermo = this.api.hap.uuid.generate(`thermo:${t.hubId}:${t._id}`);
     const uuidSlider = this.api.hap.uuid.generate(`slider:${t.hubId}:${t._id}`);
+    const uuidTemp = this.api.hap.uuid.generate(`temp:${t.hubId}:${t._id}`);
 
     const roomName = this.roomsById.get(t.roomId)?.name;
     const thermoName = roomName
@@ -167,6 +171,26 @@ export class OtodoVavPlatform implements DynamicPlatformPlugin {
         this.accessories.splice(this.accessories.indexOf(existingSlider), 1);
       }
     }
+
+    // ========= TEMP SENSOR ACCESSORY =========
+    const tempName = roomName
+      ? `Température ${roomName}`
+      : `Température ${t._id}`;
+    const existingTemp = this.accessories.find(a => a.UUID === uuidTemp);
+
+    let tempAccessory: OtodoTempSensorAccessory;
+
+    if (existingTemp) {
+      tempAccessory = new OtodoTempSensorAccessory(this, existingTemp, t);
+    } else {
+      const acc = new this.api.platformAccessory(tempName, uuidTemp);
+      tempAccessory = new OtodoTempSensorAccessory(this, acc, t);
+      this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [acc]);
+      this.accessories.push(acc);
+    }
+
+    // Stockage (deviceId → sensorInstance)
+    this.tempSensors.set(tempAccessory.deviceId, tempAccessory);
   }
 
   private async discoverDevices(hubId: string): Promise<void> {
@@ -182,6 +206,54 @@ export class OtodoVavPlatform implements DynamicPlatformPlugin {
       this.log.error(
         '❌ Erreur lors de la découverte des thermostats : ' + String(e),
       );
+    }
+  }
+
+  private async startDevicesPolling(): Promise<void> {
+    this.log.info('📡 Mise en place du poller global /devices');
+
+    // Premier polling immédiat
+    await this.refreshDevicesOnce();
+
+    // Polling périodique
+    setInterval(async () => {
+      await this.refreshDevicesOnce();
+    }, 30000);
+  }
+
+  /**
+   * Fonction interne : récupère /devices et met à jour les capteurs
+   */
+  private async refreshDevicesOnce(): Promise<void> {
+    try {
+      const devices = await this.tClient.getDevices();
+
+      for (const dev of devices) {
+        const endpoint = dev.endpoints?.[0];
+        if (!endpoint) {
+          continue;
+        }
+
+        const tempCap = endpoint.capabilities?.find(
+          (c: DeviceCapability) => c._id === 4,
+        );
+        if (!tempCap) {
+          continue;
+        }
+
+        const deviceId = dev._id;
+        const sensor = this.tempSensors.get(deviceId);
+        if (!sensor) {
+          continue;
+        }
+
+        const kelvinX10 = tempCap.value;
+        const celsius = Number(((kelvinX10 - 2731) / 10).toFixed(1));
+
+        sensor.updateTemperature(celsius);
+      }
+    } catch (err) {
+      this.log.warn(`⚠️ Poller devices: ${String(err)}`);
     }
   }
 }

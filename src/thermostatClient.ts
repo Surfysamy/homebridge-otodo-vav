@@ -8,6 +8,7 @@ import {
   LocalServicesResponse,
   Room,
   RoomsResponse,
+  Device,
 } from './types';
 
 const BASE_URL = 'https://api.gateway.otodo.io';
@@ -77,6 +78,19 @@ export class ThermostatClient {
 
     const services = (await res.json()) as LocalServicesResponse;
     return services.filter(s => s.type === 'thermostat');
+  }
+
+  async getDevices(): Promise<Device[]> {
+    const res = await this.auth.authedFetch(`${BASE_URL}/devices`);
+
+    if (!res.ok) {
+      throw new Error(
+        `Erreur lors de la récupération des devices: ${res.status}`,
+      );
+    }
+
+    const devices = (await res.json()) as Device[];
+    return devices;
   }
 
   /**
