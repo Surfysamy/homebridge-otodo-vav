@@ -1,6 +1,6 @@
 {
   "name": "homebridge-otodo-vav",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "Homebridge plugin for Otodo VAV thermostats",
   "keywords": [
     "homebridge-plugin",
