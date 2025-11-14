@@ -78,10 +78,11 @@ export class ThermostatAccessory {
       .onGet(this.handleGetTargetState.bind(this))
       .onSet(this.handleSetTargetState.bind(this));
 
-    // Température actuelle
+    // --- Température actuelle ---
     this.service
       .getCharacteristic(Characteristic.CurrentTemperature)
-      .onGet(this.handleGetCurrentTemperature.bind(this));
+      .setProps({ minValue: -50, maxValue: 100 })
+      .onGet(() => this.state.CurrentTemperature);
 
     // Température de consigne (chauffage)
     this.service
@@ -292,6 +293,19 @@ export class ThermostatAccessory {
         this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE,
       );
     }
+  }
+
+  public updateCurrentTemperature(value: number): void {
+    this.state.CurrentTemperature = value;
+
+    this.service.updateCharacteristic(
+      this.platform.api.hap.Characteristic.CurrentTemperature,
+      value,
+    );
+
+    this.platform.log.debug(
+      `${this.accessory.displayName}: Température mise à jour → ${value}°C`,
+    );
   }
 
   // ====== MAPPINGS ======
