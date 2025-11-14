@@ -164,7 +164,7 @@ export class OtodoVavPlatform implements DynamicPlatformPlugin {
   // 🔥 Poller TRV → mise à jour du thermostat associé
   private async startDevicesPolling(): Promise<void> {
     await this.refreshDevicesOnce();
-    setInterval(async () => await this.refreshDevicesOnce(), 30000);
+    setInterval(async () => await this.refreshDevicesOnce(), 1000);
   }
 
   private async refreshDevicesOnce(): Promise<void> {
