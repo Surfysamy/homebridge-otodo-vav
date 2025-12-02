@@ -26,10 +26,15 @@ export class ThermostatClient {
     const res = await this.auth.authedFetch(`${BASE_URL}/hubs`);
 
     if (!res.ok) {
+      if (res.status === 404) {
+        this.log.warn('⚠️ Aucun hub trouvé pour ce compte');
+        return [];
+      }
       throw new Error(`Erreur lors de la récupération des hubs: ${res.status}`);
     }
 
-    return res.json() as Promise<HubsResponse>;
+    const hubs = (await res.json()) as HubsResponse;
+    return Array.isArray(hubs) ? hubs : [];
   }
 
   /**
@@ -39,58 +44,87 @@ export class ThermostatClient {
     const res = await this.auth.authedFetch(`${BASE_URL}/rooms`);
 
     if (!res.ok) {
+      if (res.status === 404) {
+        this.log.debug('Aucune room configurée');
+        return [];
+      }
       throw new Error(
         `Erreur lors de la récupération des pièces: ${res.status}`,
       );
     }
 
-    return res.json() as Promise<RoomsResponse>;
+    const rooms = (await res.json()) as RoomsResponse;
+    return Array.isArray(rooms) ? rooms : [];
   }
 
   async getLocalServices(hubId: string): Promise<ThermostatService[]> {
+    if (!hubId) {
+      this.log.warn('⚠️ getLocalServices: hubId manquant');
+      return [];
+    }
+
     const res = await this.auth.authedFetch(
       `${BASE_URL}/hubs/${hubId}/local-services`,
     );
 
     if (!res.ok) {
+      if (res.status === 404) {
+        this.log.debug(`Hub ${hubId}: aucun service local trouvé`);
+        return [];
+      }
       throw new Error(
         `Erreur API local-services sur hub ${hubId}: ${res.status}`,
       );
     }
 
     const json = (await res.json()) as LocalServicesResponse;
-    return json.filter(s => s.type === 'thermostat');
+    const services = Array.isArray(json) ? json : [];
+    return services.filter(s => s.type === 'thermostat');
   }
 
   /**
    * Récupère tous les local-services (thermostats) de tous les hubs
    */
   async getAllThermostats(hubId: string): Promise<ThermostatService[]> {
+    if (!hubId) {
+      this.log.warn('⚠️ getAllThermostats: hubId manquant');
+      return [];
+    }
+
     const res = await this.auth.authedFetch(
       `${BASE_URL}/hubs/${hubId}/local-services`,
     );
 
     if (!res.ok) {
+      if (res.status === 404) {
+        this.log.warn(`⚠️ Hub ${hubId}: aucun thermostat trouvé`);
+        return [];
+      }
       throw new Error(
         `Erreur lors de la récupération des thermostats: ${res.status}`,
       );
     }
 
     const services = (await res.json()) as LocalServicesResponse;
-    return services.filter(s => s.type === 'thermostat');
+    const serviceList = Array.isArray(services) ? services : [];
+    return serviceList.filter(s => s.type === 'thermostat');
   }
 
   async getDevices(): Promise<Device[]> {
     const res = await this.auth.authedFetch(`${BASE_URL}/devices`);
 
     if (!res.ok) {
+      if (res.status === 404) {
+        this.log.debug('Aucun device trouvé');
+        return [];
+      }
       throw new Error(
         `Erreur lors de la récupération des devices: ${res.status}`,
       );
     }
 
     const devices = (await res.json()) as Device[];
-    return devices;
+    return Array.isArray(devices) ? devices : [];
   }
 
   /**
@@ -100,11 +134,17 @@ export class ThermostatClient {
     hubId: string,
     serviceId: number,
   ): Promise<ThermostatService> {
+    if (!hubId || serviceId === undefined) {
+      throw new Error('hubId et serviceId sont requis');
+    }
+
     const list = await this.getLocalServices(hubId);
     const thermostat = list.find(s => s._id === serviceId);
 
     if (!thermostat) {
-      throw new Error(`Thermostat ${serviceId} introuvable dans hub ${hubId}`);
+      throw new Error(
+        `Thermostat ${serviceId} introuvable dans hub ${hubId} (${list.length} thermostats disponibles)`,
+      );
     }
     return thermostat;
   }

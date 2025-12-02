@@ -117,19 +117,35 @@ export class ThermostatAccessory {
       const active = this.client.isActive(t);
 
       this.state.Active = active ? 1 : 0;
-      this.state.CurrentTemperature = this.client.getCurrentTemperature(t) ?? 0;
-      this.state.TargetTemperature = t.comfortTemp;
+
+      // Handle missing temperature gracefully
+      const currentTemp = this.client.getCurrentTemperature(t);
+      if (currentTemp !== null && !isNaN(currentTemp)) {
+        this.state.CurrentTemperature = currentTemp;
+      } else {
+        this.platform.log.debug(
+          `${this.accessory.displayName}: Température non disponible, conservation de ${this.state.CurrentTemperature}°C`,
+        );
+      }
+
+      // Handle missing comfortTemp with sensible default
+      this.state.TargetTemperature =
+        typeof t.comfortTemp === 'number' && !isNaN(t.comfortTemp)
+          ? t.comfortTemp
+          : 21; // Default comfort temperature
+
       this.state.TargetHeaterCoolerState = this.mapWorkingModeToHomeKit(
-        t.workingMode,
+        t.workingMode ?? 0,
       );
       this.state.CurrentHeaterCoolerState = active ? 2 : 0; // 2 = HEATING, 0 = INACTIVE
 
       this.updateCharacteristics();
     } catch (error) {
-      this.platform.log.error(
-        `Erreur lors du rafraîchissement de ${this.accessory.displayName}:`,
-        error,
+      const errMsg = error instanceof Error ? error.message : String(error);
+      this.platform.log.warn(
+        `⚠️ Impossible de rafraîchir ${this.accessory.displayName}: ${errMsg}`,
       );
+      // Keep last known state, don't throw
     }
   }
 

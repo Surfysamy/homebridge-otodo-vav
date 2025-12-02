@@ -12,7 +12,15 @@ export class OtodoTempSensorAccessory {
     private readonly accessory: PlatformAccessory,
     thermostat: ThermostatService,
   ) {
-    this.deviceId = thermostat.modules[0].deviceId;
+    // Safely get deviceId with fallback
+    if (!thermostat.modules || thermostat.modules.length === 0) {
+      this.platform.log.warn(
+        `⚠️ Thermostat ${thermostat._id} n'a pas de modules configurés`,
+      );
+      this.deviceId = thermostat._id; // Use thermostat ID as fallback
+    } else {
+      this.deviceId = thermostat.modules[0].deviceId ?? thermostat._id;
+    }
 
     const { Service, Characteristic } = this.platform.api.hap;
 

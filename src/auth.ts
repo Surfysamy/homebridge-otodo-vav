@@ -1,5 +1,5 @@
 import type { Logger } from 'homebridge';
-import { AUTH_URL, API_HEADERS } from './settings';
+import { AUTH_URL, API_HEADERS, DEFAULT_CONFIG } from './settings';
 import { TokenStore, StoredTokens } from './tokenStore';
 
 export interface AuthConfig {
@@ -24,12 +24,35 @@ export interface AuthResponse {
 export class AuthClient {
   private tokens: StoredTokens | null = null;
   private refreshing: Promise<void> | null = null;
+  private readonly validatedConfig: AuthConfig;
 
   constructor(
     private readonly log: Logger,
     private readonly store: TokenStore,
-    private readonly cfg: AuthConfig,
-  ) {}
+    cfg: AuthConfig,
+  ) {
+    // Validate and sanitize configuration
+    this.validatedConfig = this.validateAuthConfig(cfg);
+  }
+
+  /**
+   * Validates auth config and applies defaults
+   */
+  private validateAuthConfig(cfg: AuthConfig): AuthConfig {
+    const email = (cfg.email || '').trim();
+    const password = cfg.password || '';
+    const parkname = (cfg.parkname || DEFAULT_CONFIG.parkname).trim();
+
+    if (!email) {
+      throw new Error("Email est requis pour l'authentification");
+    }
+
+    if (!password) {
+      throw new Error("Mot de passe est requis pour l'authentification");
+    }
+
+    return { email, password, parkname };
+  }
 
   private computeExpiry(nowMs: number, expiresInSec: number): number {
     // Marge de sécurité d'1 heure pour anticiper l'expiration
@@ -56,34 +79,55 @@ export class AuthClient {
   }
 
   private async authenticate(): Promise<void> {
-    this.log.debug('Authentification avec email:', this.cfg.email);
+    this.log.debug('Authentification avec email:', this.validatedConfig.email);
 
     const body = {
-      email: this.cfg.email,
-      password: this.cfg.password,
-      parkName: this.cfg.parkname, // Correction: parkName avec N majuscule
+      email: this.validatedConfig.email,
+      password: this.validatedConfig.password,
+      parkName: this.validatedConfig.parkname,
     };
 
-    // DEBUG: Afficher le body envoyé (masquer le password en prod)
-    this.log.debug(
-      'Body envoyé:',
-      JSON.stringify({
-        ...body,
-        password: '***',
-      }),
-    );
-
     try {
-      const res = await fetch(AUTH_URL, {
-        method: 'POST',
-        headers: API_HEADERS,
-        body: JSON.stringify(body),
-      });
+      let res: Response;
+      try {
+        res = await fetch(AUTH_URL, {
+          method: 'POST',
+          headers: API_HEADERS,
+          body: JSON.stringify(body),
+        });
+      } catch (networkError) {
+        const errMsg =
+          networkError instanceof Error
+            ? networkError.message
+            : String(networkError);
+        if (errMsg.includes('ENOTFOUND') || errMsg.includes('EAI_AGAIN')) {
+          throw new Error(
+            'Impossible de joindre le serveur Otodo - vérifiez votre connexion internet',
+          );
+        }
+        if (errMsg.includes('ETIMEDOUT') || errMsg.includes('ECONNREFUSED')) {
+          throw new Error(
+            'Le serveur Otodo ne répond pas - réessayez plus tard',
+          );
+        }
+        throw new Error(`Erreur réseau: ${errMsg}`);
+      }
 
       this.log.debug('Status de la réponse:', res.status);
 
       if (!res.ok) {
         const text = await res.text();
+        if (res.status === 401 || res.status === 403) {
+          throw new Error('Email ou mot de passe incorrect');
+        }
+        if (res.status === 429) {
+          throw new Error('Trop de tentatives - attendez quelques minutes');
+        }
+        if (res.status >= 500) {
+          throw new Error(
+            'Le serveur Otodo rencontre des problèmes - réessayez plus tard',
+          );
+        }
         throw new Error(
           `Authentification échouée: HTTP ${res.status} - ${text}`,
         );
@@ -92,7 +136,9 @@ export class AuthClient {
       const json = (await res.json()) as AuthResponse;
 
       if (json.isSuspended) {
-        throw new Error('Compte suspendu, impossible de continuer');
+        throw new Error(
+          'Votre compte Otodo est suspendu - contactez le support Otodo',
+        );
       }
 
       const now = Date.now();
